@@ -86,6 +86,14 @@ def status_code_error(index, name_value=None, msg_personalize=None):
             "error_code": "RC1.2",
             "error_message": "Login inválido, por favor, verifique suas credênciais.",
         },
+        1.3: {
+            "error_code": "RC1.3",
+            "error_message": "Erro de validação. por favor, Tente mais tarde, se o erro persistir, entre em contato com o suporte.",
+        },
+        1.4: {
+            "error_code": "RC1.4",
+            "error_message": "Login inválido, por favor, verifique suas credênciais.",
+        },
         2: {
             "error_code": "RC2",
             "error_message": "Imagem de avatar apenas em formatos .png ou .jpg.",

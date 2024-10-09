@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from ..models import User, Profile
 from utils.common import *
-
+from project import settings
 class ProfileSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True)
     user_email = serializers.ReadOnlyField(source='user.email')
@@ -25,7 +25,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         # Obtenha a request a partir do context e construa a base_url
         request = self.context.get('request')
         if request is not None:
-            base_url = request.build_absolute_uri('/')
+            base_url = settings.HOST_API
             # Concatena a base_url ao campo 'picture'
             if representation['picture']:
                 representation['picture'] = f"{base_url}media/{representation['picture']}"

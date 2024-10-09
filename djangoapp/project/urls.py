@@ -5,7 +5,7 @@ from authentication.viewsets.viewsSetLogin import GoogleLoginView, GoogleRegiste
 from authentication.viewsets.viewSetUsers import UserDetailView
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 from utils.common import generate_csrf_token
-from email_service.views import CustomPasswordResetView
+from email_service.views import CustomPasswordResetAPIView
 from .views import test_view
 
 """ Rotas """
@@ -20,6 +20,8 @@ main_router_v1 = DefaultRouter()
 # Inclua os roteadores de `Users` 
 main_router_v1.registry.extend(authentication_router.registry)
 
+
+
 # Lista de URLs de autenticação
 auth_urls = [
     #AUTH JWT
@@ -30,9 +32,10 @@ auth_urls = [
     path('api/v1/csrf-token/', generate_csrf_token, name='generate-csrf-token'),
     
     # Password reset URLs
-    path('api/v1/auth/password-reset/send-email/', CustomPasswordResetView.as_view(), name='password_reset'),
+    path('api/v1/auth/password-reset/send-email/', CustomPasswordResetAPIView.as_view(), name='password_reset'),
     
-    
+    #pagamentos
+    path('api/v1/', include('payments.urls')),
     
     # Login Google
     path('api/v1/google-register/', GoogleRegisterView.as_view(), name='google-register'),

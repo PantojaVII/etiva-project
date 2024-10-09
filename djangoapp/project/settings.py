@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from datetime import timedelta
+from corsheaders.defaults import default_headers
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -11,6 +12,8 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'change-me')
 DEBUG = bool(int(os.getenv('DEBUG', 0)))
 
 
+'''Permissões'''
+# Obtendo a lista de hosts permitidos e origens CORS/CSRF
 ALLOWED_HOSTS = [
     h.strip() for h in os.getenv('ALLOWED_HOSTS', '').split(',')
     if h.strip()
@@ -22,9 +25,25 @@ CORS_ALLOWED_ORIGINS = [
     if h.strip()
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+       h.strip() for h in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',')
+    if h.strip()
+]
+# Adicionando cabeçalhos adicionais, se necessário
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'Access-Control-Allow-Origin',
+    'Access-Control-Allow-Headers',
+]
+
 """ Permite todas as origens """
 CORS_ORIGIN_ALLOW_ALL = bool(int(os.getenv('CORS_ORIGIN_ALLOW_ALL', 0)))
 
+ 
+HOST_API= os.getenv('HOST_API')
+
+
+
+HOST_API = os.getenv('HOST_API')
 
 # Application definition
 
@@ -38,7 +57,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'authentication',
-    'email_service'
+    'email_service',
+    'credits',
+    'payments'
 
 ,
 ]
@@ -183,3 +204,5 @@ EMAIL_HOST = 'sandbox.smtp.mailtrap.io'  # Servidor SMTP do Gmail
 EMAIL_PORT = 2525
 EMAIL_HOST_USER = 'a0584abe31f49c'
 EMAIL_HOST_PASSWORD = '34b63faa32cd07'
+
+MERCADOPAGO_ACCESS_TOKEN = os.getenv('MERCADOPAGO_ACCESS_TOKEN', False)

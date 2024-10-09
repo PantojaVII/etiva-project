@@ -181,14 +181,14 @@ class UserDetailView(APIView):
         except Profile.DoesNotExist:
             profile = None
 
-        base_url = request.build_absolute_uri('/media/')
+        base_url = settings.HOST_API
         user_data = {
             "pk": encode_id(user.id),
             "username": user.username,
             "user_email": user.email,
             "first_name": profile.first_name if profile else None,
             "last_name": profile.last_name if profile else None,
-            "picture": f"{base_url}{profile.picture}" if profile and profile.picture else None,
+            "picture": f"{base_url}/media/{profile.picture}" if profile and profile.picture else None,
             "phone_number": profile.phone_number if profile else None,
             "date_of_birth": profile.date_of_birth if profile else None,
         }

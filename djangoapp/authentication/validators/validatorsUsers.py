@@ -32,6 +32,7 @@ class ValidatorUser(Validator):
             )
             return 
 
+    """ Verifica para alteração de email """
     def validate_email(self):
         data = self.get_data()
         email = data.get('email')
@@ -50,6 +51,18 @@ class ValidatorUser(Validator):
                 {
                     'email': {
                         "error_code": status_code_error(1),
+                    }
+                }
+            )
+    def validate_email_restore(self, email):
+        
+        # Verifica se já existe algum usuário com o email fornecido
+        if not User.objects.filter(email=email).exists():
+            # Se existir, retorna um erro
+            super().set_Errors(
+                {
+                    'email': {
+                        "error_code": status_code_error(1, msg_personalize='Email não encontrado' ),
                     }
                 }
             )
@@ -117,14 +130,37 @@ class ValidatorUser(Validator):
 
     def validate_password(self):
         password = self.get_data().get('password')
+      
+
+        # Regras de validação
+        errors = {}
         if len(password) < 6:
+            errors['password'] = True
+        
+        if not re.search(r"[A-Z]", password):  # Verifica se há pelo menos uma letra maiúscula
+            errors['password'] = True
+        
+        if not re.search(r"[a-z]", password):  # Verifica se há pelo menos uma letra minúscula
+            errors['password'] = True
+        
+        if not re.search(r"[0-9]", password):  # Verifica se há pelo menos um número
+            errors['password'] = True
+        
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):  # Verifica se há pelo menos um caractere especial
+            errors['password'] = True
+
+        if len(set(password)) < 4:  # Verifica se a senha não tem pelo menos 4 caracteres diferentes
+            errors['password'] = True
+
+        # Se houver erros, chama set_Errors
+        if errors:
             super().set_Errors(
                 {
                     'password': {
-                        "error_code": status_code_error(3),
+                        "error_code": status_code_error(3, msg_personalize="A senha deve ter pelo menos 6 caracteres, letra maiúscula, uma minúscula, conter pelo menos um número, e possuir ao menos um caractere especial."),
                     }
                 }
-            ) 
+            )  
 
     def validate_password_confirmation(self):
         password = self.get_data().get('password')
@@ -137,6 +173,17 @@ class ValidatorUser(Validator):
                     }
                 }
             )      
+
+    def verify_csrf(self, csrf):
+        if not csrf:
+            super().set_Errors(
+                {
+                    'email': {
+                        "error_code": status_code_error(1.3),
+                    }
+                }
+            ) 
+            
             
     def validate_User(self):
         self.validate_Getuser()
@@ -161,8 +208,13 @@ class ValidatorUser(Validator):
             self.validate_password_confirmation()           
         return super().get_Errors()
 
+    def validate_RestorePassword(self):
+        self.verify_csrf(csrf=self.get_data().get('csrf'))
+        self.validate_email_restore(email=self.get_data().get('email'))     
+        return super().get_Errors()
+    
     def validate_ResetPassword(self, authorization_header):
-
+        
         self.verify_jwt_token(authorization_header, self._user)
         self.validate_password()
         self.validate_password_confirmation()           
