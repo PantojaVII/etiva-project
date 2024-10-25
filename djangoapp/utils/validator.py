@@ -6,6 +6,7 @@ from authentication.models import User
 from utils.common import decode_id, encode_id
 
 class Validator:
+    
     def __init__(self):
         self._errors = {}
 
@@ -14,7 +15,20 @@ class Validator:
     
     def set_Errors(self, error):
         self._errors.update(error)
+    
+    def validate_Prompt_AI(self, prompt):
+        prompt = prompt
+        if not prompt:
 
+            self.set_Errors(
+                {
+                    'prompt': {
+                        "error_code": status_code_error(7.0),
+                    }
+                }
+            )
+            return 
+        
     def verify_jwt_token(self, authorization_header, user):
 
         if not authorization_header or not authorization_header.startswith('Bearer '):
@@ -55,6 +69,8 @@ class Validator:
                     }
                 }
             )
+
+
 def status_code_error(index, name_value=None, msg_personalize=None):
     # Lista de códigos de erro e mensagens correspondentes
     error_messages = {
@@ -121,6 +137,14 @@ def status_code_error(index, name_value=None, msg_personalize=None):
         6.1: {
             "error_code": "RC6.1",
             "error_message": "Perfil não encontrado.",
+        },
+        7.0: {
+            "error_code": "RC7.0",
+            "error_message": "Verifique o prompt, campo obrigatório.",
+        },
+        7.1: {
+            "error_code": "RC7.1",
+            "error_message": "Créditos insuficientes para realizar a operação.",
         },
     }
         # Verifica se um valor adicional foi fornecido

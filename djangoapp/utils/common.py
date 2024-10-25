@@ -5,7 +5,7 @@ from hashids import Hashids
 from rest_framework.relations import HyperlinkedIdentityField
 from django.middleware.csrf import get_token
 from django.http import JsonResponse
-
+from rest_framework.exceptions import APIException
 
 
 hashids = Hashids(min_length=8, salt="your_secret_salt")
@@ -64,6 +64,9 @@ def groups_policies_decoded(encoded_list):
     decoded_list = [decode_id(encoded_id) for encoded_id in encoded_list]
     return decoded_list
 
+class ValidationTokenWithJwtError(APIException):
+    status_code = 400
+    default_detail = 'Invalid PK hash.'
     
 
 

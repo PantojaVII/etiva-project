@@ -4,12 +4,63 @@ import shutil
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-""" Section Upload and delete medias"""
-class BaseFileUploader():
-   
-    def __init__(self, file=None):
-         self._file = file
+import boto3
+from botocore.exceptions import NoCredentialsError, ClientError
 
+
+""" Section Upload and delete medias"""
+class BaseFileUploader:
+    def __init__(self, file=None):
+        self._bucket_name = os.getenv('S3_BUCKET_NAME')
+        self._file = file
+        self._s3_client = boto3.client('s3')
+
+    def upload_file_to_s3(self, file_path, file_name):
+        """Faz o upload de um arquivo para o S3."""
+        try:
+            self._s3_client.upload_file(file_path, self._bucket_name, file_name)
+            print(f"Upload de {file_name} para {self._bucket_name} foi bem-sucedido.")
+            return True
+        except FileNotFoundError:
+            print(f"O arquivo {file_path} não foi encontrado.")
+            return False
+        except NoCredentialsError:
+            print("Credenciais não encontradas.")
+            return False
+        except ClientError as e:
+            print(f"Ocorreu um erro: {e}")
+            return False
+
+    def delete_file_from_s3(self, file_name):
+        """Exclui um arquivo do S3."""
+        try:
+            self._s3_client.delete_object(Bucket=self._bucket_name, Key=file_name)
+            print(f"Arquivo {file_name} excluído do bucket {self._bucket_name}.")
+            return True
+        except ClientError as e:
+            print(f"Ocorreu um erro: {e}")
+            return False
+
+    def delete_directory_from_s3(self, prefix):
+        """Exclui todos os arquivos em um diretório no S3."""
+        try:
+            response = self._s3_client.list_objects_v2(Bucket=self._bucket_name, Prefix=prefix)
+
+            if 'Contents' in response:
+                for obj in response['Contents']:
+                    self._s3_client.delete_object(Bucket=self._bucket_name, Key=obj['Key'])
+                print(f"Todos os arquivos em {prefix} foram excluídos do bucket {self._bucket_name}.")
+                return True
+            else:
+                print("Nenhum arquivo encontrado para excluir.")
+                return False
+        except ClientError as e:
+            print(f"Ocorreu um erro: {e}")
+            return False
+
+
+    
+    
     """ Generate unique name for file """
     def _generate_unique_filename(self):
         # Obtém o nome do arquivo e a extensão
@@ -53,10 +104,3 @@ class BaseFileUploader():
                 print("O diretório não existe.")
         except Exception as e:
             print(f"Erro ao excluir diretório localmente: {e}")
-
-    """ Cloud - S3, R2 etc """            
-    def upload_files_cloud(file_path, file):
-
-        path = default_storage.save(file_path, ContentFile(file.read()))
-        
-        return True

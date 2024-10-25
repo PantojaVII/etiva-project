@@ -59,9 +59,8 @@ INSTALLED_APPS = [
     'authentication',
     'email_service',
     'credits',
-    'payments'
-
-,
+    'payments',
+    'creatus_cortex',
 ]
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',

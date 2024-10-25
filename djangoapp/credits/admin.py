@@ -51,7 +51,7 @@ class CreditTransactionAdmin(admin.ModelAdmin):
 # Configuração de exibição do modelo Service
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
-    list_display = ('name', 'cost_in_credits','cost_in_generate','profit', 'is_active', 'created_at', 'updated_at')
+    list_display = ('id', 'name', 'cost_in_credits','cost_in_generate','profit', 'is_active', 'created_at', 'updated_at', 'slug')
     search_fields = ('name',)
     list_filter = ('is_active', 'created_at', 'updated_at')
     ordering = ('name',)
@@ -64,5 +64,13 @@ class ServiceUsageAdmin(admin.ModelAdmin):
     readonly_fields = ('used_at',)
     list_filter = ('used_at',)
     ordering = ('-used_at',)
+
+    def save_model(self, request, obj, form, change):
+        try:
+            super().save_model(request, obj, form, change)  # Só chama o super se o obj.save() for bem-sucedido
+        except ValidationError as e:
+            # Exibe a mensagem de erro e interrompe o processo de salvar
+            messages.error(request, f"Erro ao salvar: {e.message}")
+            return  # Impede que o Django continue o processo de salvamento
 
 

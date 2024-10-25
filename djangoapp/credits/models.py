@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from decimal import Decimal  
 from django.core.exceptions import ValidationError
+from django.utils import timezone
+from django.utils.text import slugify
 
 User = get_user_model()
 
@@ -57,9 +59,9 @@ class CreditTransaction(models.Model):
 
         super().save(*args, **kwargs)
 
-#define os serviços disponíveis e seus custos em créditos.
 class Service(models.Model):
     name = models.CharField(max_length=255, unique=True)  # Nome do serviço
+    slug = models.SlugField(max_length=255, unique=True, blank=True)  # Slug único
     description = models.TextField(blank=True, null=True)  # Descrição do serviço
     cost_in_credits = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Custo do serviço em créditos
     cost_in_generate = models.DecimalField(max_digits=10, decimal_places=3, default=0.00)  # Custo do serviço em créditos
@@ -69,6 +71,10 @@ class Service(models.Model):
     updated_at = models.DateTimeField(auto_now=True)  # Data de atualização do registro
   
     def save(self, *args, **kwargs):
+        # Gera o slug a partir do nome, se ainda não estiver definido
+        if not self.slug:
+            self.slug = slugify(self.name)
+        
         # Calcula o lucro antes de salvar
         self.profit = self.cost_in_credits - self.cost_in_generate
         super().save(*args, **kwargs)
@@ -87,20 +93,25 @@ class ServiceUsage(models.Model):
         return f"{self.user.username} - Service: {self.service.name} - Credits Used: {self.credits_used}"
 
     def save(self, *args, **kwargs):
-        # Chame o método record_usage para registrar o uso
-        if self.credits_used and self.user and self.service:
-            try:
-                # Usar o método record_usage para deduzir os créditos e registrar a transação
-                credits_used = self.service.cost_in_credits
-                CreditTransaction.objects.create(
-                user=self.user,
-                transaction_type='DEDUCT',
-                amount=credits_used,
-                description=f"Uso do serviço: {self.service.name}"
-            )
-            except ValidationError as e:
-                # Se houver um erro, você pode lidar com isso conforme necessário
-                raise e  # Levanta o erro para ser tratado pelo chamador
+       
+        # Obter ou criar o saldo de créditos do usuário
+        user_credit = UserCredit.objects.get(user=self.user)
+        # Verificar se o usuário tem créditos suficientes
+        if user_credit.balance < self.credits_used:
+            raise ValidationError(f"Saldo insuficiente. O usuário tem {user_credit.balance} créditos, mas o serviço custa {self.credits_used} créditos.")
+        
+        # Obter a data e hora atuais formatadas
+        current_time = timezone.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        # Registrar a transação de crédito (DEDUCT)
+        CreditTransaction.objects.create(
+            user=self.user,
+            transaction_type='DEDUCT',
+            amount=self.credits_used,
+             description=f"Uso do serviço: {self.service.name}. Data: {current_time}",  # Inclui data e hora na descrição
+        )
+
+        # Agora que os créditos foram deduzidos, salvar o uso do serviço
         super().save(*args, **kwargs)
 
 

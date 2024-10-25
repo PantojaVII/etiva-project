@@ -21,44 +21,35 @@ main_router_v1 = DefaultRouter()
 main_router_v1.registry.extend(authentication_router.registry)
 
 
+API_VERSION = 'v1'
 
 # Lista de URLs de autenticação
 auth_urls = [
     #AUTH JWT
-    path('api/v1/auth/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/v1/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/v1/auth/check/', TokenVerifyView.as_view(), name='token_check'), 
-    path('api/v1/auth/user-detail/', UserDetailView.as_view(), name='user-detail'),
-    path('api/v1/csrf-token/', generate_csrf_token, name='generate-csrf-token'),
+    path(f'api/{API_VERSION}/auth/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path(f'api/{API_VERSION}/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path(f'api/{API_VERSION}/auth/check/', TokenVerifyView.as_view(), name='token_check'), 
+    path(f'api/{API_VERSION}/auth/user-detail/', UserDetailView.as_view(), name='user-detail'),
+    path(f'api/{API_VERSION}/csrf-token/', generate_csrf_token, name='generate-csrf-token'),
     
-    # Password reset URLs
-    path('api/v1/auth/password-reset/send-email/', CustomPasswordResetAPIView.as_view(), name='password_reset'),
-    
-    #pagamentos
-    path('api/v1/', include('payments.urls')),
+    path(f'api/{API_VERSION}/auth/password-reset/send-email/', CustomPasswordResetAPIView.as_view(), name='password_reset'),# Password reset URLs
+    path(f'api/{API_VERSION}/', include('payments.urls')),    # Pagamentos
     
     # Login Google
-    path('api/v1/google-register/', GoogleRegisterView.as_view(), name='google-register'),
-    path('api/v1/google-login/', GoogleLoginView.as_view(), name='google-login'),
+    path(f'api/{API_VERSION}/google-register/', GoogleRegisterView.as_view(), name='google-register'),
+    path(f'api/{API_VERSION}/google-login/', GoogleLoginView.as_view(), name='google-login'),
 ]
-
 
 urlpatterns = [
     path('admin/', admin.site.urls),  # URLs do Django admin
 
     *auth_urls,
-        
-    #AUTH ADMIN 
-    path('auth/', include('rest_framework.urls')),   
     
-    
-    #API VERSÃO 1 V1 
-    path('api/v1/', include(main_router_v1.urls)),
+    path('auth/', include('rest_framework.urls')),       #AUTH ADMIN 
+    path(f'api/{API_VERSION}/', include(main_router_v1.urls)),    #API VERSÃO 1 
 
-    #testes 
-    path('test/', test_view, name='test_view'),
-
-
+    # Soluções em IA
+    path(f'api/{API_VERSION}/ai/creatus_cortex/', include('creatus_cortex.urls')),
 ]
 
 if settings.DEBUG:

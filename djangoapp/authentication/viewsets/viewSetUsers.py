@@ -6,18 +6,17 @@ from rest_framework.exceptions import ValidationError
 from ..serializers.serializerUsers import UserSerializer
 from utils.common import decode_id, encode_id
 from ..validators.validatorsUsers import ValidatorUser
-from rest_framework.request import Request
 from django.utils.text import slugify
 from ..models import User, Profile
 import random
 import string
-import jwt  
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from utils.common import decode_id, encode_id
 from utils.paths.baseFileUploader import BaseFileUploader 
 from rest_framework.decorators import action
 from django.conf import settings
+ 
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -27,7 +26,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_object(self, pk):
         # Decodifica o hash para obter o ID
         decoded_id = decode_id(pk)
-
+  
         """ Validando user """
         data = {"id": decoded_id}
         validator = ValidatorUser(data)

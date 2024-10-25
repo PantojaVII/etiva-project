@@ -1,10 +1,13 @@
 from ..models import User
+from credits.models import Service, UserCredit
 from ..backend.backends import EmailBackend
 import re
 from utils.validator import Validator, status_code_error
 from django.contrib.auth.hashers import check_password
 from utils.common import *
-
+from utils.common import ValidationTokenWithJwtError
+from django.http import JsonResponse
+from django.core.exceptions import ObjectDoesNotExist
 
 class ValidatorUser(Validator):
 
@@ -178,13 +181,12 @@ class ValidatorUser(Validator):
         if not csrf:
             super().set_Errors(
                 {
-                    'email': {
+                    'validation': {
                         "error_code": status_code_error(1.3),
                     }
                 }
             ) 
-            
-            
+                
     def validate_User(self):
         self.validate_Getuser()
         return super().get_Errors()
@@ -219,7 +221,7 @@ class ValidatorUser(Validator):
         self.validate_password()
         self.validate_password_confirmation()           
         return super().get_Errors()
-
+        
     """ Login """
     def validate_login_credentials(self):
 
@@ -236,3 +238,33 @@ class ValidatorUser(Validator):
             )
         return super().get_Errors()
 
+def validate_pk_hash_jwt(user_id, pk_hash):
+    """
+    Valida o hash enviado com o JWT armazenado no local storage do frontend.
+    
+    :param user_id: ID do usuário autenticado.
+    :param pk_hash: Hash a ser validado.
+    :raises PKHashValidationError: Se a validação falhar.
+    """
+    id_pk = decode_id(pk_hash)  # Decodifica o pk_hash
+    if id_pk != user_id:
+        print('-----erro de validação--------')  # Debug
+        raise ValidationTokenWithJwtError({'verify': {'error_code': status_code_error(0.3)}})
+
+def check_user_has_sufficient_credits(user_id, service_id):
+    try:
+        # Obtém o serviço pelo ID
+        service = Service.objects.get(id=service_id)
+        
+        # Obtém os créditos do usuário
+        user_credit, created = UserCredit.objects.get_or_create(user_id=user_id)
+        
+        
+        # Verifica se o usuário tem créditos suficientes para o serviço
+        if user_credit.balance >= service.cost_in_credits:
+            return service
+        else:
+            raise ValidationTokenWithJwtError({'credit': {'error_code': status_code_error(7.1)}})
+    except ObjectDoesNotExist:
+        # Caso o serviço ou os créditos do usuário não sejam encontrados
+        raise ValidationTokenWithJwtError({'credit': {'error_code': status_code_error(0.3)}})

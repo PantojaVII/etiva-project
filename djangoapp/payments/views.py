@@ -1,6 +1,6 @@
 from django.shortcuts import redirect
 from django.http import JsonResponse, HttpResponse
-from .services import MercadoPagoService
+from .services import MercadoPagoService, ProcessPayment
 from django.views.decorators.csrf import csrf_exempt
 import json
 from django.conf import settings
@@ -8,18 +8,19 @@ import mercadopago # type: ignore
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from .models import Payment 
+ 
 
-@api_view(['POST'])  # Decorador necessário para views baseadas em função no Django REST Framework
-@permission_classes([IsAuthenticated])  # Requer autenticação com JWT
-def create_payment(request):
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_page_payment(request):
     try:
         # Obtenha o usuário autenticado
         user = request.user
-        print('--------------')
-        print(user.id)
-
-        # Obtenha a quantidade de créditos a partir do formulário
-        quantity = int(request.data.get('quantity', 1))  # Use request.data para obter dados do corpo da requisição
+ 
+        # Obtenha e valide a quantidade de créditos a partir do formulário
+        quantity = int(request.data.get('quantity', 1))
+        if quantity <= 0:
+            return JsonResponse({'error': 'Invalid quantity'}, status=400)
 
         # Crie uma instância do serviço MercadoPago
         mercado_pago_service = MercadoPagoService()
@@ -29,106 +30,122 @@ def create_payment(request):
 
         # Crie um registro de pagamento no banco de dados
         payment = Payment.objects.create(user=user, amount=amount, status='pending', payment_id=None)
+ 
 
-        print(payment.id)
         # Crie o pagamento com o valor calculado
         init_payment_url = mercado_pago_service.create_payment(quantity=amount, payment_id=payment.id)
+        if not init_payment_url:
+            payment.status = 'failed'
+            payment.save()
+            return JsonResponse({'error': 'Failed to create payment'}, status=500)
 
-        # Retorne o URL de inicialização do pagamento em formato JSON
-        return redirect(init_payment_url)
+        # Redirecione o usuário para o pagamento
+
+        return JsonResponse({'paymentUrl': init_payment_url}, status=200)
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
- 
-def payment_success(request):
-    # Aqui você pode verificar o status do pagamento (opcional)
-    # O Mercado Pago pode enviar dados via query params como 'payment_id' e 'status'
-    payment_id = request.GET.get('payment_id', '')
-    status = request.GET.get('collection_status', '')
 
-    # Valide se o pagamento foi realmente aprovado (status == 'approved')
-    if status == 'approved':
-        # Exibir uma mensagem de sucesso ou redirecionar
-        return HttpResponse("Pagamento bem-sucedido! ID do pagamento: " + payment_id)
-    else:
-        return HttpResponse("Falha ao processar o pagamento.")
-
-def payment_failure(request):
-    return HttpResponse("O pagamento falhou. Por favor, tente novamente.")
-
-def payment_pending(request):
-    # Captura informações da URL, como ID do pagamento e status
-    payment_id = request.GET.get('payment_id', '')
-    status = request.GET.get('collection_status', '')
-
-    # Exibe uma mensagem informando que o pagamento está pendente
-    if status == 'in_process' or status == 'pending':
-        return HttpResponse(f"Seu pagamento está pendente. ID do pagamento: {payment_id}. Aguarde a confirmação.")
-    else:
-        return HttpResponse("Erro ao processar o pagamento. Status desconhecido.")
-    
-def process_payment_approved():
-    print('------------------------------')
-    print("Função de pós-pagamento foi chamada com sucesso!")
-
-def process_payment_rejected():
-    print('------------------------------')
-    print("Função de pós-pagamento foi chamada com sucesso! COMPRA REJEITADA")
-
+# Função que obtém as informações detalhadas de um pagamento
 def get_payment_info(payment_id):
-    sdk = mercadopago.SDK(settings.MERCADOPAGO_ACCESS_TOKEN)
-
-    # Faz uma requisição para obter os detalhes do pagamento
+    sdk = mercadopago.SDK(settings.MERCADOPAGO_ACCESS_TOKEN)   
+    # Faz a requisição para obter os detalhes do pagamento pelo ID
     payment_info = sdk.payment().get(payment_id)
+  
+    return payment_info['response']
 
-    # Imprime a resposta para depuração
-    print(payment_info)
-
-    if payment_info['status'] == 200:
-        return payment_info['response']
-    else:
-        raise Exception("Erro ao obter informações do pagamento: {}".format(payment_info))
-
-
-
-@csrf_exempt
+# View para processar notificações do webhook
+@csrf_exempt  # Desativa a verificação de CSRF para essa view, permitindo requisições externas
 def process_payment(request):
     if request.method == 'POST':
-        print('---------------')
-        print('webhook')
         try:
-            # Decodifica o corpo da requisição
+            print('----------------- Inicio da requisição -----------------')
+            # Decodifica o corpo da requisição em JSON
             data = json.loads(request.body)
-
-            # Imprime os dados recebidos em formato JSON
-            print(json.dumps(data, indent=4))  # Adicionando indentação para melhor legibilidade
-
+            
+            # Extrai o ID do pagamento da estrutura JSON recebida
             payment_id = data.get('data', {}).get('id')
+            
+            # Extrai a ação que foi realizada (ex: "payment.updated" ou "payment.created")
             action = data.get('action')
+            
+            # Verifica se o action existe e se o payment_id está presente
+            if action and payment_id:
+                payment_info = get_payment_info(payment_id)
+                print('----------action------------')
+                print(action)
+                """ É acionado quando é criado um novo pagamento, seja ele aprovado ou não """
+                if action == 'payment.created':
+                    # Lógica para quando o pagamento é criado
+                    print("Pagamento criado com sucesso:", json.dumps(payment_info, indent=4))
+                    
+                    # Certifique-se de que o 'metadata' e 'payment_pk' existem no 'payment_info'
+                    if 'metadata' in payment_info and 'payment_pk' in payment_info['metadata']:
+                        pk = payment_info['metadata']['payment_pk']
+                        process_payment = ProcessPayment(pk, payment_id, payment_info=payment_info)
+                        process_payment.process_payment()
+                        return JsonResponse({'status': 'Pagamento processado'}, status=202)
+                    else:
+                        return JsonResponse({'error': 'Metadata ou payment_pk não encontrado'}, status=200)
+                
+                elif action == 'payment.updated':
+                    status = payment_info['status']
+                    print('----------status------------')
+                    print(status)
+                    # Cria uma instância de ProcessPayment
+                    process_payment = ProcessPayment(payment_info['metadata']['payment_pk'], payment_id, payment_info)
+                    
+                    # Atualiza o pagamento com base no status
+                    response = process_payment.process_payment()
+                    
+                    print("Pagamento atualizado:", json.dumps(payment_info, indent=4))
+                    
+                    return response  # Retorna a resposta da atualização do pagamento
 
-            # Verifica o status do pagamento e realiza as ações necessárias
-            if action == 'payment.updated' and payment_id:
-                payment_info = get_payment_info(payment_id)  # Função para buscar detalhes do pagamento
-                status = payment_info.get('status')
+                elif action == 'payment.approved':
+                    # Se o pagamento foi aprovado, processa o pagamento aprovado
+                    print("Pagamento aprovado:", payment_info)
+                    return JsonResponse({}, status=200)
 
-                if status == 'approved':
-                    # Processar o pagamento aprovado
-                    process_payment_approved(payment_info)
-                elif status == 'rejected':
-                    # Processar o pagamento rejeitado
-                    process_payment_rejected(payment_info)
-                elif status == 'in_process':
-                    # Se o pagamento estiver em processamento, podemos apenas registrar
-                    print(f"Pagamento {payment_id} em processamento.")
+                elif action == 'payment.rejected':
+                    # Se o pagamento foi rejeitado, processa o pagamento rejeitado
+                    print("Pagamento rejeitado:", payment_info)
+                    return JsonResponse({'status': 'ok'}, status=200)
+
+                elif action == 'payment.pending':
+                    # Lógica para pagamento pendente
+                    print("Pagamento pendente:", payment_info)
+                    return JsonResponse({'status': 'Pagamento pendente processado'}, status=200)
+
+                elif action == 'payment.refunded':
+                    # Lógica para quando o pagamento é reembolsado
+                    print("Pagamento reembolsado:", payment_info)
+                    return JsonResponse({'status': 'Pagamento reembolsado processado'}, status=200)
+
+                elif action == 'payment.cancelled':
+                    # Lógica para quando o pagamento é cancelado
+                    print("Pagamento cancelado:", payment_info)
+                    return JsonResponse({'status': 'Pagamento cancelado processado'}, status=200)
+
+                # Caso a ação não seja reconhecida
                 else:
-                    print(f"Status não tratado: {status}")
-            else:
-                print(f"Ação não tratada: {action}")
+                    print("Ação não reconhecida:", action)
+                    return JsonResponse({'status': 'Ação não reconhecida'}, status=400)
 
-            return JsonResponse({'status': 'ok'})
+            # Retorna uma resposta de erro caso o payment_id não esteja presente
+            print("ID de pagamento não encontrado:", action)
+            return JsonResponse({'error': 'ID de pagamento não encontrado'}, status=200)
+
         except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+            print("JSON inválido:", action)
+            
+            # Retorna erro caso o corpo da requisição não seja um JSON válido
+            return JsonResponse({'error': 'JSON inválido'}, status=400)
+
         except Exception as e:
+            print("Erro inesperado:", str(e))
+            # Captura quaisquer outros erros inesperados e os retorna na resposta,
             return JsonResponse({'error': str(e)}, status=500)
 
-    return JsonResponse({'error': 'Invalid request method'}, status=405)
+    # Caso o método HTTP da requisição não seja POST, retorna um erro de método inválido
+    return JsonResponse({'error': 'Método de requisição inválido'}, status=405)
