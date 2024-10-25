@@ -32,7 +32,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             return Response(errors, status=status.HTTP_400_BAD_REQUEST)
 
         # Verifica se o usuário existe e está ativo
-        user = authenticate(username=email, password=password)
+        user = authenticate(email=email, password=password)
         
         if user is not None:
             # Aqui você pode gerar e retornar o token

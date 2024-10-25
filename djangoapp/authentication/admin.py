@@ -1,13 +1,9 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import User, Profile
-from .forms import UserAdminChangeForm
-from django.contrib.auth.forms import AdminPasswordChangeForm
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    form = UserAdminChangeForm  # Formulário de mudança personalizado
-    change_password_form = AdminPasswordChangeForm  # Formulário de alteração de senha padrão do Django
     list_display = ('email', 'username', 'auth_method', 'is_active', 'is_staff', 'is_superuser', 'id')
     list_filter = ('is_active', 'is_staff', 'is_superuser', 'auth_method')
     fieldsets = (

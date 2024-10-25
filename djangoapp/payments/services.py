@@ -34,7 +34,7 @@ class MercadoPagoService:
             "metadata": {
                 'payment_pk': payment_id,
                 },
-            'notification_url': f"https://b3af-2804-61d0-1062-9001-cd0e-d9e4-fb9b-ab53.ngrok-free.app/api/v1/payments/webhook/"
+            'notification_url': f"{settings.HOST_API}/api/v1/payments/webhook/"
 
         }
 

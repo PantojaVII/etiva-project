@@ -17,6 +17,7 @@ class UserSerializer(serializers.ModelSerializer):
     
     def get_pk(self, obj):
         return encode_id(obj.pk)
+
     
 class PasswordResetSerializer(serializers.ModelSerializer):
     old_password = serializers.CharField(write_only=True, required=False)
