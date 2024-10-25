@@ -184,25 +184,26 @@ class ProfileViewSet(viewsets.ModelViewSet):
     def credit_summary(self, request, pk=None):
         profile = self.get_object(pk)
         
-        # Obtém ou cria UserCredit para o usuário
-        user_credit = UserCredit.objects.get_or_create(
-            user=profile.user,
-            defaults={'balance': 0}  # Define o saldo padrão como 0
-        )
+        try:
+            # Tenta obter o UserCredit do usuário
+            user_credit = UserCredit.objects.get(user=profile.user)
+        except UserCredit.DoesNotExist:
+            # Se o usuário não tiver créditos, cria um objeto temporário com saldo 0
+            user_credit = UserCredit(user=profile.user, balance=0)
 
         # Serializa o saldo de crédito do usuário
         credit_serializer = UserCreditSerializerNoUser(user_credit)
+        
+        # Obtém o último serviço utilizado pelo usuário
+        last_service_usage = ServiceUsage.objects.filter(user=profile.user).order_by('-used_at').first()
 
-        # Obtém ou cria o último uso de serviço do usuário
-        last_service_usage = ServiceUsage.objects.get_or_create(user=profile.user)
-
-        # Serializa o último serviço utilizado
-        last_service_usage_serializer = ServiceUsageSerializer(last_service_usage)
+        # Serializa o último serviço utilizado, se existir
+        last_service_usage_serializer = ServiceUsageSerializer(last_service_usage) if last_service_usage else None
         
         # Monta a resposta
         response_data = {
             'amount': credit_serializer.data,
-            'last_service': last_service_usage_serializer.data,  # Sempre terá dados do último serviço utilizado
+            'last_service': last_service_usage_serializer.data if last_service_usage else None  # Adiciona os dados do último serviço utilizado
         }
         
         return Response(response_data, status=status.HTTP_200_OK)
