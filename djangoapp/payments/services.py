@@ -5,7 +5,6 @@ import json
 import os
 from .models import Payment
 from django.http import JsonResponse
-from credits.models import *
 from django.http import JsonResponse
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -130,7 +129,7 @@ class ProcessPayment:
             self.payment_obj.save()  # Atualiza o status do pagamento para aprovado
 
             # Cria a transação de crédito
-            CreditTransaction.objects.create(user=user, transaction_type='ADD', amount=self.amount, description=description)
+            
             return JsonResponse({'status': 'Pagamento creditado com sucesso'}, status=200)
 
         else:

@@ -1,17 +1,9 @@
 import requests
-from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
-import json
 from rest_framework_simplejwt.views import TokenObtainPairView
-
-
 from ..models import User
-from ..serializers.serializerUsers import UserSerializer
-from rest_framework.decorators import action
-from rest_framework.authtoken.views import ObtainAuthToken
-from rest_framework.authtoken.models import Token
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny
 from django.contrib.auth import authenticate

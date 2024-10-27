@@ -1,5 +1,4 @@
 from ..models import User
-from credits.models import Service, UserCredit
 from ..backend.backends import EmailBackend
 import re
 from utils.validator import Validator, status_code_error
@@ -251,20 +250,4 @@ def validate_pk_hash_jwt(user_id, pk_hash):
         print('-----erro de validação--------')  # Debug
         raise ValidationTokenWithJwtError({'verify': {'error_code': status_code_error(0.3)}})
 
-def check_user_has_sufficient_credits(user_id, service_id):
-    try:
-        # Obtém o serviço pelo ID
-        service = Service.objects.get(id=service_id)
-        
-        # Obtém os créditos do usuário
-        user_credit, created = UserCredit.objects.get_or_create(user_id=user_id)
-        
-        
-        # Verifica se o usuário tem créditos suficientes para o serviço
-        if user_credit.balance >= service.cost_in_credits:
-            return service
-        else:
-            raise ValidationTokenWithJwtError({'credit': {'error_code': status_code_error(7.1)}})
-    except ObjectDoesNotExist:
-        # Caso o serviço ou os créditos do usuário não sejam encontrados
-        raise ValidationTokenWithJwtError({'credit': {'error_code': status_code_error(0.3)}})
+ 
