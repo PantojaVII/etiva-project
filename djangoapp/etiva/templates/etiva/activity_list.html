@@ -1,0 +1,120 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Atividades do Participante - Etiva</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js" integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM2zQeibD7m8JqM/4W+8KdfG2fJMGnUUt4l+hI" crossorigin="anonymous"></script>
+    <style>
+        /* Estilo personalizado para a barra de rolagem */
+        .scrollable {
+            scrollbar-width: thin; /* Firefox */
+            scrollbar-color: #3182ce #e2e8f0; /* Firefox */
+        }
+
+        .scrollable::-webkit-scrollbar {
+            width: 8px; /* Largura da barra de rolagem */
+        }
+
+        .scrollable::-webkit-scrollbar-thumb {
+            background-color: #3182ce; /* Cor da barra de rolagem */
+            border-radius: 10px; /* Bordas arredondadas */
+        }
+
+        .scrollable::-webkit-scrollbar-track {
+            background: #e2e8f0; /* Cor do fundo da barra de rolagem */
+            border-radius: 10px; /* Bordas arredondadas */
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 flex flex-col min-h-screen">
+    <div class="flex-grow max-w-md mx-auto my-10 p-8 bg-white rounded-lg shadow-lg h-auto max-h-[80vh] overflow-auto">
+        <div class="text-center mb-6">
+            <img src="{% static 'logo.svg' %}" alt="Logo Etiva" class="mx-auto mb-4 h-12" />
+            <h2 class="text-3xl font-bold">Consultar minhas Atividades</h2>
+        </div>
+        <form method="post" class="space-y-4" id="activityForm" onsubmit="showLoading()">
+            {% csrf_token %}
+            <div>
+                <label for="id_email" class="block text-sm font-medium text-gray-700">Email</label>
+                <input type="email" name="email" id="id_email"
+                    class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required placeholder="Digite seu email" />
+            </div>
+            <div>
+                <label for="id_cpf" class="block text-sm font-medium text-gray-700">CPF</label>
+                <input type="text" name="cpf" id="id_cpf"
+                    class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required placeholder="Digite seu CPF" />
+            </div>
+            <button type="submit" id="submitButton"
+                class="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-150 ease-in-out">
+                Buscar Atividades
+            </button>
+            <div id="loadingIndicator" class="hidden text-center mt-2">
+                <i class="fas fa-spinner fa-spin text-blue-600"></i> Carregando...
+            </div>
+        </form>
+
+        {% if activities %}
+            <h3 class="text-xl font-semibold mt-6">Atividades Encontradas:</h3>
+            <div class="max-h-60 overflow-y-auto border border-gray-200 rounded-md p-2 mt-2 scrollable">
+                <ul class="space-y-2">
+                    {% for activity in activities %}
+                        {% with activity_datetime=activity.activity_date|stringformat:"Y-m-d"|add:activity.activity_time %}
+                            {% with now=now|date:"Y-m-d H:i" %}
+                                <li class="{% if activity_datetime < now %}bg-green-100 border-green-400 text-green-800{% else %}bg-gray-50 border-gray-200 text-gray-800{% endif %} py-2 px-4 rounded border shadow-sm">
+                                    <strong>{{ activity.activity_name }}</strong> - {{ activity.activity_date }} às {{ activity.activity_time }}
+                                    {% if activity_datetime < now %}
+                                        <p class="text-sm text-green-600 mt-1">Atividade já realizada.</p>
+                                    {% endif %}
+                                </li>
+                            {% endwith %}
+                        {% endwith %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% elif form.is_bound %}
+            <p class="text-red-500 mt-2">Nenhuma atividade encontrada.</p>
+        {% endif %}
+    </div>
+
+    <footer class="bg-gray-800 text-white text-center py-4">
+        <p>IFTO - CAMPUS PARAÍSO DO TOCANTINS</p>
+    </footer>
+
+    <script>
+        function showLoading() {
+            document.getElementById("submitButton").classList.add("hidden"); // Esconde o botão de enviar
+            document.getElementById("loadingIndicator").classList.remove("hidden"); // Mostra o indicador de loading
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const cpfInput = document.getElementById("id_cpf");
+
+            cpfInput.addEventListener("input", function () {
+                // Remove todos os caracteres que não sejam dígitos
+                let value = cpfInput.value.replace(/\D/g, "");
+                // Adiciona a máscara
+                if (value.length > 11) {
+                    value = value.slice(0, 11);
+                }
+                if (value.length > 9) {
+                    value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+                } else if (value.length > 6) {
+                    value = value.replace(/(\d{3})(\d{3})(\d{1,2})/, "$1.$2.$3");
+                } else if (value.length > 3) {
+                    value = value.replace(/(\d{3})(\d{1,3})/, "$1.$2");
+                } else if (value.length > 0) {
+                    value = value.replace(/(\d{1,3})/, "$1");
+                }
+                // Atualiza o valor do campo
+                cpfInput.value = value;
+            });
+        });
+    </script>
+</body>
+</html>

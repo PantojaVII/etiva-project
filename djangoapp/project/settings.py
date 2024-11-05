@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'authentication',
     'email_service',
     'payments',
+    'etiva',
 ]
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',

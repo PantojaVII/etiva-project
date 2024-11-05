@@ -50,6 +50,8 @@ urlpatterns = [
     
     path(f'api/{API_VERSION}/', include('payments.urls')),    # Pagamentos
 
+    path('', include('etiva.urls')),
+
 
 ]
 

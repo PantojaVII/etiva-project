@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Detalhes do Participante</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh; /* Altura da viewport */
+        background: #f0f0f0; /* Fundo mais suave para visualização na tela */
+        font-family: Arial, sans-serif; /* Fonte padrão */
+      }
+
+      .card {
+        text-align: center; /* Centralizar texto dentro do card */
+        width: 400px; /* Largura fixa do card */
+        max-width: 95%; /* Largura máxima do card */
+        height: auto; /* Altura automática para acomodar conteúdo */
+        padding: 20px; /* Padding interno ajustado */
+        margin: 20px; /* Margem ao redor do card */
+        border: 2px solid #000030; /* Borda do card */
+        border-radius: 10px; /* Bordas arredondadas */
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Sombra para profundidade */
+        background-color: #ffffff; /* Cor de fundo do card */
+        box-sizing: border-box; /* Inclui padding e borda no cálculo da largura */
+      }
+
+      h2 {
+        margin: 0 0 10px; /* Margem abaixo do título */
+        color: #000030; /* Cor do título */
+        font-size: 2em; /* Tamanho do título ajustado para tela */
+      }
+
+      p {
+        margin: 5px 0; /* Margem entre parágrafos */
+        color: #333; /* Cor do texto */
+        font-size: 1.2em; /* Tamanho do texto ajustado para tela */
+        text-align: justify; /* Justificar texto dos parágrafos */
+      }
+
+      .print-btn {
+        display: inline-block; /* Exibir o botão em linha */
+        margin-top: 15px; /* Margem acima do botão */
+        padding: 10px 20px; /* Padding do botão */
+        font-size: 1em; /* Tamanho da fonte do botão */
+        color: white; /* Cor do texto do botão */
+        background-color: #000030; /* Cor de fundo do botão */
+        border: none; /* Sem borda */
+        border-radius: 5px; /* Bordas arredondadas do botão */
+        cursor: pointer; /* Cursor de ponteiro ao passar sobre o botão */
+      }
+      /* Rodapé do card */
+      .footer {
+        position: absolute; /* Posicionamento absoluto dentro do card */
+        bottom: 10px; /* Distância do fundo do card */
+        left: 0;
+        right: 0;
+        text-align: center; /* Centralizar texto do rodapé */
+        color: #000030; /* Cor do texto do rodapé */
+        font-size: 1em; /* Tamanho da fonte do rodapé */
+        margin-bottom: 24px;
+    }
+
+      /* Estilo de impressão */
+      @media print {
+        body {
+          margin: 0;
+          padding: 0;
+          height: 100vh; /* Altura da viewport */
+          width: 100vw; /* Largura da viewport */
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          background: white;
+          font-family: Arial, sans-serif; /* Fonte padrão */
+          font-size: 3vw; /* Tamanho da fonte baseado na largura da viewport */
+          line-height: 1.2; /* Espaçamento entre linhas */
+        }
+
+        .card {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          text-align: center; /* Centralizar texto dentro do card */
+          width: 95vw; /* Largura do card ajustada para 95% da largura da viewport */
+          height: 90vh; /* Altura do card ajustada para 90% da altura da viewport */
+          padding: 2vh; /* Padding interno ajustado para 2% da altura da viewport */
+          margin: 0; /* Sem margem ao redor do card */
+          border: 2px solid #000030; /* Borda do card */
+          border-radius: 10px; /* Bordas arredondadas */
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Sombra para profundidade */
+          background-color: #f8f9fa; /* Cor de fundo suave */
+          box-sizing: border-box; /* Inclui padding e borda no cálculo da largura */
+          overflow: hidden; /* Esconde o excesso de conteúdo */
+        }
+
+        .card-content {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          text-align: center;
+          gap: 20px; /* Espaçamento entre os elementos dentro do card */
+        }
+
+        h2 {
+          margin: 0 0 10px; /* Margem abaixo do título */
+          color: #000030; /* Cor do título */
+          font-size: 5vw; /* Tamanho do título baseado na largura da viewport */
+          text-align: justify; /* Justificar título */
+        }
+
+        p {
+          margin: 18px 0; /* Margem entre parágrafos */
+          color: #333; /* Cor do texto */
+          font-size: 3vw; /* Tamanho do texto baseado na largura da viewport */
+          text-align: justify; /* Justificar texto dos parágrafos */
+        }
+
+        .print-btn {
+          display: none; /* Ocultar o botão ao imprimir */
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2>{{ participant.full_name }}</h2>
+      <div class="card-content">
+        <p><strong>Identificador:</strong> {{ participant.id }}</p>
+        <!-- ID do participante adicionado -->
+        <p><strong>Email:</strong> {{ participant.email }}</p>
+        <p><strong>CPF:</strong> {{ participant.cpf }}</p>
+        <p><strong>Telefone:</strong> {{ participant.phone_number }}</p>
+      </div>
+      <button class="print-btn" onclick="printCard()">Imprimir</button>
+      <p class="footer">IFTO-CAMPUS PARAÍSO</p>
+    </div>
+
+    <script>
+      function printCard() {
+        window.print();
+      }
+    </script>
+  </body>
+</html>

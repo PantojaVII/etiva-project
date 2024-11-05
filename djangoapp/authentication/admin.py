@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import User, Profile
 
-@admin.register(User)
+#@admin.register(User)
 class UserAdmin(BaseUserAdmin):
     list_display = ('email', 'username', 'auth_method', 'is_active', 'is_staff', 'is_superuser', 'id')
     list_filter = ('is_active', 'is_staff', 'is_superuser', 'auth_method')
@@ -17,7 +17,7 @@ class UserAdmin(BaseUserAdmin):
     ordering = ('email',)
     filter_horizontal = ()
 
-@admin.register(Profile)
+#@admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
     # Campos que serão exibidos na listagem de perfis
     list_display = ('id', 'user', 'first_name', 'last_name', 'phone_number', 'date_of_birth')

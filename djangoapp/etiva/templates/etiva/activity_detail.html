@@ -1,0 +1,21 @@
+<!-- templates/etiva/activity_detail.html -->
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhes da Atividade</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="max-w-md mx-auto my-10 p-8 bg-white rounded-lg shadow-lg">
+        <h2 class="text-3xl font-bold mb-6">{{ activity.activity_name }}</h2>
+        <p><strong>Data:</strong> {{ activity.activity_date }}</p>
+        <p><strong>Hora:</strong> {{ activity.activity_time }}</p>
+        <p><strong>Responsável:</strong> {{ activity.responsible_person }}</p>
+        <p><strong>Localização:</strong> {{ activity.location }}</p>
+        <p><strong>Tipo de Atividade:</strong> {{ activity.activity_type }}</p>
+        <a href="{% url 'activity_list' %}" class="text-blue-600 underline">Voltar para a lista de atividades</a>
+    </div>
+</body>
+</html>
